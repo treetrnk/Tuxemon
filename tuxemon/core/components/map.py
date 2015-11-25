@@ -34,6 +34,7 @@ import pygame
 import os
 import sys
 from pprint import pprint
+from core.components.pyganim import PygAnimation
 
 # PyTMX LOVES to change their API without notice. Here we try and handle that.
 try:
@@ -306,12 +307,12 @@ class Map(object):
         tiles = []
 
         # Loop through all tiles in our map file and get the pygame surface associated with it.
-        for x in range(0, self.data.width):
+        for x in range(0, int(self.data.width)):
 
             # Create a list of tile for the y-axis
             y_list = []
 
-            for y in range(0, self.data.height):
+            for y in range(0, int(self.data.height)):
 
                 layer_list = []
 
@@ -340,6 +341,26 @@ class Map(object):
                     except AttributeError:
                         surface = self.data.get_tile_image(x, y, layer)
 
+                    # Check to see if this tile has an animation
+                    tile_properties = self.data.get_tile_properties(x, y, layer)
+                    if tile_properties and "frames" in tile_properties:
+                        images_and_durations = []
+                        for frame in tile_properties["frames"]:
+                            # bitcraft/PyTMX 3.20.14+ support
+                            if hasattr(frame, 'gid'):
+                                anim_surface = self.data.get_tile_image_by_gid(frame.gid)
+                                images_and_durations.append((anim_surface, float(frame.duration) / 1000))
+                            # ShadowApex/PyTMX 3.20.13 fork support
+                            elif "gid" in frame:
+                                anim_surface = self.data.get_tile_image_by_gid(frame["gid"])
+                                images_and_durations.append((anim_surface, float(frame["duration"]) / 1000))
+                            # bitcraft/PyTMX 3.20.13 support
+                            elif "gid" not in frame:
+                                images_and_durations = [(surface, 1)]
+                                break
+                        surface = PygAnimation(images_and_durations)
+                        surface.play()
+
                     # Create a tile based on the image
                     if surface:
                         tile = {'tile_pos': (x, y),
@@ -359,7 +380,7 @@ class Map(object):
         mapsize = self.size
 
         # Create a list of all tile positions that we cannot walk through
-        collision_map = set()
+        collision_map = {}
 
         # Create a dictionary of coordinates that have conditional collisions
         cond_collision_map = {}
@@ -392,7 +413,7 @@ class Map(object):
             y = self.round_to_divisible(collision_region.y, self.tile_size[1]) / self.tile_size[1]
             width = self.round_to_divisible(collision_region.width, self.tile_size[0]) / self.tile_size[0]
             height = self.round_to_divisible(collision_region.height, self.tile_size[1]) / self.tile_size[1]
-            
+
             # Loop through properties and create list of directions for each property
             if collision_region.properties:
                 enters = []
@@ -410,20 +431,19 @@ class Map(object):
             # inside this region.
             for a in range(0, int(width)):
                 for b in range(0, int(height)):
-                    collision_tile = (a + x, b + y) 
-                    collision_map.add(collision_tile)
+                    collision_tile = (a + x, b + y)
+                    collision_map[collision_tile] = "None"
 
                     # Check if collision region has properties, and is therefore a conditional zone
                     # then add the location and conditions to semi_collision_map
                     if collision_region.properties:
-
-                        cond_collision_tile = {'location': collision_tile}
+                        tile_conditions = {}
                         for key in collision_region.properties.keys():
                             if "enter" in key:
-                                cond_collision_tile['enter'] = enters
+                                tile_conditions['enter'] = enters
                             if "exit" in key:
-                                cond_collision_tile['exit'] = exits
-                        cond_collision_map[collision_tile] = cond_collision_tile
+                                tile_conditions['exit'] = exits
+                        collision_map[collision_tile] = tile_conditions
 
         # Similar to collisions, except we need to identify the tiles
         # on either side of the poly-line and prevent moving between
@@ -523,7 +543,7 @@ class Map(object):
                     collision_lines_map.add((top_side_tile, "down"))
                     collision_lines_map.add((bottom_side_tile, "up"))
 
-        return tiles, collision_map, collision_lines_map, cond_collision_map, mapsize
+        return tiles, collision_map, collision_lines_map, mapsize
 
     def round_to_divisible(self, x, base=16):
         """Rounds a number to a divisible base. This is used to round collision areas that aren't
@@ -596,7 +616,6 @@ if __name__=="__main__":
     screen.blit(background, (0, 0))
     pygame.display.flip()
 
-    print "Loading map"
     tile_size = [80, 80]    # 1 tile = 16 pixels
     testmap = Map()
     #testmap.loadfile("resources/maps/test.map", tile_size)

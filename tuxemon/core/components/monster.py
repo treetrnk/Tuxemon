@@ -169,12 +169,36 @@ class Monster(object):
         self.special_attack     = results["special_attack_base"]
         self.special_defense    = results["special_defense_base"]
 
-        self.hp_modifier        = results["hp_mod"]
-        self.attack_modifier    = results["attack_mod"]
-        self.defense_modifier   = results["defense_mod"]
-        self.speed_modifier     = results["speed_mod"]
-        self.special_attack_modifier = results["special_attack_mod"]
-        self.special_defense_modifier = results["special_defense_mod"]
+        self.hp_modifier = (
+            results["hp_mod"] - 1,
+            results["hp_mod"],
+            results["hp_mod"] + 1 
+            )
+        self.attack_modifier = (
+            results["attack_mod"] - 1,
+            results["attack_mod"],
+            results["attack_mod"] + 1
+            )
+        self.defense_modifier = (
+            results["defense_mod"] - 1,
+            results["defense_mod"],
+            results["defense_mod"] + 1,
+            )
+        self.speed_modifier = (
+            results["speed_mod"] - 1,
+            results["speed_mod"],
+            results["speed_mod"] + 1,
+            )
+        self.special_attack_modifier = (
+            results["special_attack_mod"] - 1,
+            results["special_attack_mod"],
+            results["special_attack_mod"] + 1,
+            )
+        self.special_defense_modifier = (
+            results["special_defense_mod"] - 1,
+            results["special_defense_mod"],
+            results["special_defense_mod"] + 1,
+            )
         self.experience_give_modifier = results["exp_give_mod"]
         self.experience_required_modifier = results["exp_req_mod"]
 
@@ -291,13 +315,15 @@ class Monster(object):
         self.special_defense += int(
             self.special_defense * 0.1 + random.choice(self.special_defense_modifier) * (level / 10))
 
-        print "---- Level: %s ----" % self.level
+        # Display stats each time they are calculated 
+        """print "---- Level: %s ----" % self.level
         print "HP:", self.hp
         print "Attack:", self.attack
         print "Defense:", self.defense
         print "Speed:", self.speed
         print "Spc Atk:", self.special_attack
         print "Spc Def:", self.special_defense
+        """
 
     def level_up(self):
         """Increases a Monster's level by one and increases stats
