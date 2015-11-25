@@ -8,12 +8,12 @@
     "special_defense_base":   10, 
     "speed_base":             7, 
 
-    "attack_mod":             1, 
-    "defense_mod":            1,
-    "hp_mod":                 1,
-    "special_attack_mod":     1,
-    "special_defense_mod":    1,
-    "speed_mod":              1,
+    "attack_mod":             0, 
+    "defense_mod":            0,
+    "hp_mod":                 0,
+    "special_attack_mod":     0,
+    "special_defense_mod":    0,
+    "speed_mod":              0,
 
     "exp_give_mod":           3,
     "exp_req_mod":            27,
